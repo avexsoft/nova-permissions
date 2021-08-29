@@ -1,16 +1,17 @@
 <?php
+
 namespace Eminiarts\NovaPermissions\Nova;
 
-use Laravel\Nova\Nova;
-use Laravel\Nova\Resource;
-use Laravel\Nova\Fields\ID;
-use Illuminate\Http\Request;
-use Laravel\Nova\Fields\Text;
-use Illuminate\Validation\Rule;
-use Laravel\Nova\Fields\Select;
-use Laravel\Nova\Fields\MorphToMany;
 use Eminiarts\NovaPermissions\Checkboxes;
 use Eminiarts\NovaPermissions\Role as RoleModel;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Laravel\Nova\Fields\ID;
+use Laravel\Nova\Fields\MorphToMany;
+use Laravel\Nova\Fields\Select;
+use Laravel\Nova\Fields\Text;
+use Laravel\Nova\Nova;
+use Laravel\Nova\Resource;
 use Spatie\Permission\Models\Permission as SpatiePermission;
 
 class Role extends Resource
@@ -82,31 +83,26 @@ class Role extends Resource
         return [
             ID::make('Id', 'id')
                 ->rules('required')
-                ->hideFromIndex()
-            ,
+                ->hideFromIndex(),
             Text::make(__('Name'), 'name')
                 ->rules(['required', 'string', 'max:255'])
-                ->creationRules('unique:' . config('permission.table_names.roles'))
-                ->updateRules('unique:' . config('permission.table_names.roles') . ',name,{{resourceId}}')
-
-            ,
+                ->creationRules('unique:'.config('permission.table_names.roles'))
+                ->updateRules('unique:'.config('permission.table_names.roles').',name,{{resourceId}}'),
             Select::make(__('Guard Name'), 'guard_name')
                 ->options($guardOptions->toArray())
                 ->rules(['required', Rule::in($guardOptions)])
                 ->canSee(function ($request) {
                     return $request->user()->isSuperAdmin();
-                })
-            ,
+                }),
             Checkboxes::make(__('Permissions'), 'prepared_permissions')->withGroups()->options(SpatiePermission::all()->map(function ($permission, $key) {
                 return [
                     'group'  => __(ucfirst($permission->group)),
                     'option' => $permission->name,
                     'label'  => __($permission->name),
                 ];
-            })->groupBy('group')->toArray())
-            ,
+            })->groupBy('group')->toArray()),
             Text::make(__('Users'), function () {
-                return count($this->users);
+                return $this->users()->count();
             })->exceptOnForms(),
             MorphToMany::make($userResource::label(), 'users', $userResource)->searchable(),
         ];
